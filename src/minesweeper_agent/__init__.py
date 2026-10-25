@@ -1,3 +1,3 @@
-"""Screen-only Minesweeper recognition and exact constraint solving."""
+"""Screen-only Minesweeper recognition, solving, and bounded automatic play."""
 
 __version__ = "0.3.0"

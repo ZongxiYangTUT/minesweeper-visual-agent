@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "minesweeper-visual-agent"
 version = "0.3.0"
-description = "Screen-only Minesweeper recognition and exact constraint solving for Windows"
+description = "Screen-only classic Minesweeper agent with verified automatic play for Windows"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [

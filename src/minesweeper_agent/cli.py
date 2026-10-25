@@ -203,6 +203,16 @@ def make_parser() -> argparse.ArgumentParser:
     sub.add_parser("inspect", help="Read-only board inspection")
     steps = sub.add_parser("step", help="Propose and optionally perform exactly one proven move")
     steps.add_argument("--dry-run", action="store_true")
+    auto = sub.add_parser("play", help="Launch classic XP Minesweeper and play with screen-only feedback")
+    auto.add_argument("--game", type=Path,
+                      default=Path(__file__).resolve().parents[2] / "game" / "扫雷_5.1.2600.0.exe")
+    auto.add_argument("--difficulty", choices=("beginner", "intermediate", "expert", "current"), default="beginner")
+    auto.add_argument("--mines", type=int, default=None, help="Mine count for custom/current grids")
+    auto.add_argument("--games", type=int, default=1, help="Maximum games (1-100)")
+    auto.add_argument("--max-steps", type=int, default=600)
+    auto.add_argument("--delay", type=float, default=.25, help="Seconds to wait after each click")
+    auto.add_argument("--allow-guess", action="store_true", help="Allow minimum-probability guesses; games may be lost")
+    auto.add_argument("--stop-on-win", action="store_true")
     return parser
 
 
@@ -215,6 +225,14 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("Live screen capture/control requires Windows; tests are cross-platform")
     configure_dpi_awareness()
     try:
+        if args.command == "play":
+            if not 1 <= args.games <= 100 or not 1 <= args.max_steps <= 10000 or not .1 <= args.delay <= 10:
+                parser.error("play requires games=1..100, max-steps=1..10000, delay=0.1..10")
+            from .autoplay import play
+            summary = play(args)
+            if summary["status"] == "cancelled":
+                return 130
+            return 0 if summary["status"] == "finished" else 1
         {"calibrate": calibrate, "annotate": annotate,
          "inspect": inspect, "step": step}[args.command](args)
     except (ValueError, FileNotFoundError, OSError, cv2.error) as exc:
