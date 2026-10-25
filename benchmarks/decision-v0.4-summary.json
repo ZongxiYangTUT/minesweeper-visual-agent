@@ -1,0 +1,243 @@
+{
+  "date": "2026-10-25",
+  "baseline_commit": "5ac0693f4db5162bed57fc352777a2f767b1a235",
+  "optimized_commit": "22e6d0fb914114c0ff9803806c4d90f9b7379999",
+  "configuration": {
+    "games": 5000,
+    "seed_start": 10000,
+    "difficulty": [
+      "beginner",
+      "intermediate",
+      "expert"
+    ],
+    "policies": [
+      "legacy",
+      "optimized"
+    ],
+    "workers": 8,
+    "output": "data\\benchmarks\\holdout-5000.json",
+    "solver_budget": "deterministic node limits; offline wall-clock limit disabled"
+  },
+  "unique_layouts": 15000,
+  "completed_games": 30000,
+  "python": "3.13.14 (tags/v3.13.14:fd17997, Jun 10 2026, 13:03:48) [MSC v.1944 64 bit (AMD64)]",
+  "platform": "Windows",
+  "raw_results": "data/benchmarks/holdout-5000.json",
+  "raw_results_sha256": "7fc7b6ad0fdc1e1cb9328a88f28adf67aaf0ce0f016fa7f713ff9e55fde92225",
+  "summary": {
+    "beginner": {
+      "legacy": {
+        "games": 5000,
+        "outcomes": {
+          "won": 4577,
+          "lost": 423
+        },
+        "win_rate": 0.9154,
+        "winning_clicks_mean": 21.13174568494647,
+        "winning_clicks_median": 21,
+        "mean_decision_seconds": 0.0046695054
+      },
+      "optimized": {
+        "games": 5000,
+        "outcomes": {
+          "won": 4591,
+          "lost": 409
+        },
+        "win_rate": 0.9182,
+        "winning_clicks_mean": 15.901328686560662,
+        "winning_clicks_median": 16,
+        "mean_decision_seconds": 0.0078673024
+      },
+      "paired": {
+        "new_only_wins": 70,
+        "legacy_only_wins": 56,
+        "win_rate_delta": 0.0028,
+        "approx_95pct_ci": [
+          -0.001599504559743062,
+          0.007199504559743062
+        ],
+        "shared_wins": 4521,
+        "legacy_shared_clicks": 21.093784560937845,
+        "optimized_shared_clicks": 15.917938509179384,
+        "shared_click_reduction": 0.2453730404236355
+      }
+    },
+    "expert": {
+      "legacy": {
+        "games": 5000,
+        "outcomes": {
+          "lost": 3175,
+          "won": 1825
+        },
+        "win_rate": 0.365,
+        "winning_clicks_mean": 263.6350684931507,
+        "winning_clicks_median": 267,
+        "mean_decision_seconds": 0.2343011978
+      },
+      "optimized": {
+        "games": 5000,
+        "outcomes": {
+          "lost": 3065,
+          "won": 1935
+        },
+        "win_rate": 0.387,
+        "winning_clicks_mean": 169.04496124031007,
+        "winning_clicks_median": 168,
+        "mean_decision_seconds": 0.2751077528
+      },
+      "paired": {
+        "new_only_wins": 440,
+        "legacy_only_wins": 330,
+        "win_rate_delta": 0.022,
+        "approx_95pct_ci": [
+          0.011139548208292622,
+          0.03286045179170738
+        ],
+        "shared_wins": 1495,
+        "legacy_shared_clicks": 256.504347826087,
+        "optimized_shared_clicks": 168.83210702341137,
+        "shared_click_reduction": 0.34179631474363326
+      }
+    },
+    "intermediate": {
+      "legacy": {
+        "games": 5000,
+        "outcomes": {
+          "won": 3878,
+          "lost": 1122
+        },
+        "win_rate": 0.7756,
+        "winning_clicks_mean": 90.55079938112429,
+        "winning_clicks_median": 89.0,
+        "mean_decision_seconds": 0.0536683958
+      },
+      "optimized": {
+        "games": 5000,
+        "outcomes": {
+          "won": 3876,
+          "lost": 1124
+        },
+        "win_rate": 0.7752,
+        "winning_clicks_mean": 63.43111455108359,
+        "winning_clicks_median": 63.0,
+        "mean_decision_seconds": 0.0687001056
+      },
+      "paired": {
+        "new_only_wins": 199,
+        "legacy_only_wins": 201,
+        "win_rate_delta": -0.0004,
+        "approx_95pct_ci": [
+          -0.00823999215999608,
+          0.007439992159996081
+        ],
+        "shared_wins": 3677,
+        "legacy_shared_clicks": 89.34838183301605,
+        "optimized_shared_clicks": 63.46831656241501,
+        "shared_click_reduction": 0.2896534300863838
+      }
+    }
+  },
+  "live_runs": [
+    {
+      "status": "finished",
+      "games": [
+        {
+          "game": 1,
+          "difficulty": "intermediate",
+          "clicks": 68,
+          "guesses": 1,
+          "flags": 7,
+          "chords": 7,
+          "rows": 16,
+          "cols": 16,
+          "mines": 40,
+          "status": "won",
+          "seconds": 26.09
+        }
+      ],
+      "wins": 1,
+      "losses": 0,
+      "log": "data/runs/20261025-221441-551149"
+    },
+    {
+      "status": "finished",
+      "games": [
+        {
+          "game": 1,
+          "difficulty": "expert",
+          "clicks": 158,
+          "guesses": 2,
+          "flags": 12,
+          "chords": 20,
+          "rows": 16,
+          "cols": 30,
+          "mines": 99,
+          "status": "lost",
+          "seconds": 58.44
+        },
+        {
+          "game": 2,
+          "difficulty": "expert",
+          "clicks": 6,
+          "guesses": 5,
+          "flags": 0,
+          "chords": 0,
+          "rows": 16,
+          "cols": 30,
+          "mines": 99,
+          "status": "lost",
+          "seconds": 3.15
+        },
+        {
+          "game": 3,
+          "difficulty": "expert",
+          "clicks": 2,
+          "guesses": 1,
+          "flags": 0,
+          "chords": 0,
+          "rows": 16,
+          "cols": 30,
+          "mines": 99,
+          "status": "lost",
+          "seconds": 1.71
+        },
+        {
+          "game": 4,
+          "difficulty": "expert",
+          "clicks": 65,
+          "guesses": 3,
+          "flags": 4,
+          "chords": 8,
+          "rows": 16,
+          "cols": 30,
+          "mines": 99,
+          "status": "lost",
+          "seconds": 24.47
+        },
+        {
+          "game": 5,
+          "difficulty": "expert",
+          "clicks": 154,
+          "guesses": 2,
+          "flags": 10,
+          "chords": 16,
+          "rows": 16,
+          "cols": 30,
+          "mines": 99,
+          "status": "won",
+          "seconds": 58.0
+        }
+      ],
+      "wins": 1,
+      "losses": 4,
+      "log": "data/runs/20261025-222249-726759"
+    }
+  ],
+  "limitations": [
+    "Uniform first-click-safe layouts, not the XP random-number generator or mine relocation implementation.",
+    "Offline solver wall-clock budgets disabled; deterministic node/work budgets retained. Live limits remain active.",
+    "Click reduction is measured on paired shared wins and counts flags and chords.",
+    "No significant win-rate improvement established for beginner or intermediate.",
+    "No guarantee of global minimum clicks or of winning every game."
+  ]
+}
