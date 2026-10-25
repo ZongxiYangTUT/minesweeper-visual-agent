@@ -7,47 +7,12 @@ import html
 import json
 from pathlib import Path
 import time
-from math import prod
 
 import cv2
 
 from .classic import ClassicRecognizer, detect_grid
 from .model import Board, COVERED, FLAG, MINE, UNKNOWN, Move, Settings
-from .solver import analyze
-
-
-def choose_move(board: Board, settings: Settings, allow_guess: bool) -> tuple[Move | None, float | None, str]:
-    if board.locations(UNKNOWN):
-        return None, None, "unknown"
-    if board.locations(MINE):
-        return None, None, "lost"
-    revealed = sum(0 <= v <= 8 for row in board.cells for v in row)
-    if revealed == board.rows * board.cols - settings.total_mines:
-        return None, None, "won"
-    if len(board.locations(COVERED)) == board.rows * board.cols:
-        # XP moves a mine away from the first clicked cell. Later guesses are opt-in.
-        return Move("reveal", 0, 0, "Opening click on a fresh classic XP board"), None, "opening"
-    result = analyze(board, settings.total_mines, max_component_cells=96)
-    if result.errors:
-        raise ValueError("; ".join(result.errors))
-    forced = result.next_move()
-    if forced:
-        return forced, 0.0 if forced.kind == "reveal" else 1.0, "proven"
-    if allow_guess:
-        covered = board.locations(COVERED)
-        # Do not rank incomplete probabilities from a skipped frontier.
-        if covered and covered <= result.probabilities.keys():
-            def rank(cell):
-                # An independence estimate is only a tie-breaker among equal
-                # exact risks. It is never used as proof or reported as mine risk.
-                neighbors = board.neighbors(*cell)
-                blank_score = prod(0.0 if board.cells[r][c] == FLAG else
-                                   1 - result.probabilities.get((r, c), 0.0) for r, c in neighbors)
-                return result.probabilities[cell], -blank_score, cell
-            cell = min(covered, key=rank)
-            p = result.probabilities[cell]
-            return Move("reveal", *cell, "Lowest mine probability among all covered cells"), p, "guess"
-    return None, None, "stalled"
+from .policy import choose_move
 
 
 def validate_transition(before: Board, after: Board, move: Move):
@@ -63,6 +28,14 @@ def validate_transition(before: Board, after: Board, move: Move):
         raise ValueError("Click did not reveal the intended tile; stopped")
     if move.kind == "flag" and target != FLAG:
         raise ValueError("Click did not flag the intended tile; stopped")
+    if move.kind == "chord":
+        neighbors = before.neighbors(move.row, move.col)
+        targets = [(r, c) for r, c in neighbors if before.cells[r][c] == COVERED]
+        flags = sum(before.cells[r][c] == FLAG for r, c in neighbors)
+        if flags != before.cells[move.row][move.col] or not targets:
+            raise ValueError("Chord did not have the required visible flags/targets")
+        if not all(0 <= after.cells[r][c] <= 8 for r, c in targets):
+            raise ValueError("Chord did not open every intended neighbour; stopped")
 
 
 class RunLog:
@@ -90,7 +63,7 @@ class RunLog:
         (self.folder / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
         cards = []
         results = ''.join('<tr>' + ''.join(f'<td>{html.escape(str(g.get(key,"")))}</td>'
-                                          for key in ("game","difficulty","status","clicks","guesses","seconds")) + '</tr>'
+                                          for key in ("game","difficulty","status","clicks","flags","chords","guesses","seconds")) + '</tr>'
                           for g in outcomes)
         for e in self.events:
             if "frame" in e:
@@ -104,7 +77,8 @@ class RunLog:
                   'border-radius:12px;max-width:520px}img{image-rendering:pixelated;max-width:100%}'
                   'p{max-width:440px}td,th{padding:8px;text-align:left}</style><h1>Minesweeper visual agent</h1>'
                   f'<p>Status: {html.escape(status)} · Wins: {summary["wins"]} · Losses: {summary["losses"]}</p>'
-                  '<table><tr><th>Game</th><th>Difficulty</th><th>Result</th><th>Clicks</th><th>Guesses</th><th>Seconds</th></tr>'
+                  '<table><tr><th>Game</th><th>Difficulty</th><th>Result</th><th>Clicks</th>'
+                  '<th>Flags</th><th>Chords</th><th>Guesses</th><th>Seconds</th></tr>'
                   + results + '</table><p>Real screen captures. Each action is followed by another observation.</p><main>'
                   + ''.join(cards) + '</main>')
         (self.folder / "report.html").write_text(report, encoding="utf-8")
@@ -127,7 +101,8 @@ def play(args, game=None) -> dict:
     try:
         game.open()
         for number in range(1, args.games + 1):
-            active = {"game": number, "difficulty": args.difficulty, "clicks": 0, "guesses": 0, "flags": 0}
+            active = {"game": number, "difficulty": args.difficulty, "clicks": 0,
+                      "guesses": 0, "flags": 0, "chords": 0}
             game_started = time.monotonic()
             frame = None
             phase = "new_game"
@@ -181,6 +156,7 @@ def play(args, game=None) -> dict:
                 active["clicks"] += 1
                 active["guesses"] += int(status == "guess")
                 active["flags"] += int(move.kind == "flag")
+                active["chords"] += int(move.kind == "chord")
                 log.add({"event": "click", "game": number, "step": step, "move": asdict(move)})
                 previous, pending = board, move
                 time.sleep(args.delay)

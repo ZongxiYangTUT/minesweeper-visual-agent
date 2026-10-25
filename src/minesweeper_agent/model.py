@@ -95,7 +95,7 @@ class Board:
 
 @dataclass(frozen=True)
 class Move:
-    kind: str  # "reveal" or "flag"
+    kind: str  # "reveal", "flag" or "chord"
     row: int
     col: int
     reason: str

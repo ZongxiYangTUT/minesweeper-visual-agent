@@ -82,6 +82,7 @@ def test_global_probabilities_agree_with_brute_force_random_small_boards():
         assert valid
         result = analyze(board, total_mines=len(true_mines))
         assert not result.errors
+        assert result.layout_count == len(valid)
         for cell in covered:
             expected = sum(cell in layout for layout in valid) / len(valid)
             assert abs(result.probabilities[cell] - expected) < 1e-12
@@ -113,6 +114,7 @@ def test_exhausted_search_discards_incomplete_probabilities():
     result = analyze(board, total_mines=1, max_search_nodes=0)
     assert result.notes and "budget" in result.notes[0]
     assert not result.probabilities
+    assert result.layout_count is None
     assert result.next_move() is None
 
 

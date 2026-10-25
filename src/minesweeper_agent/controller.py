@@ -17,7 +17,7 @@ def execute(move: Move, settings: Settings) -> tuple[int, int]:
         raise ValueError("Click target must be on the Windows primary monitor")
     pyautogui.FAILSAFE = True
     pyautogui.PAUSE = 0.1
-    if move.kind not in ("reveal", "flag"):
+    if move.kind not in ("reveal", "flag", "chord"):
         raise ValueError(f"Unsupported move kind: {move.kind}")
-    pyautogui.click(x=x, y=y, button="left" if move.kind == "reveal" else "right")
+    pyautogui.click(x=x, y=y, button={"reveal": "left", "flag": "right", "chord": "middle"}[move.kind])
     return x, y

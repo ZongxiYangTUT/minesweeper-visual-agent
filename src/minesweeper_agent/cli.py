@@ -211,7 +211,8 @@ def make_parser() -> argparse.ArgumentParser:
     auto.add_argument("--games", type=int, default=1, help="Maximum games (1-100)")
     auto.add_argument("--max-steps", type=int, default=600)
     auto.add_argument("--delay", type=float, default=.25, help="Seconds to wait after each click")
-    auto.add_argument("--allow-guess", action="store_true", help="Allow minimum-probability guesses; games may be lost")
+    auto.add_argument("--allow-guess", action="store_true",
+                      help="Allow risk-aware guesses with bounded lookahead; games may be lost")
     auto.add_argument("--stop-on-win", action="store_true")
     return parser
 

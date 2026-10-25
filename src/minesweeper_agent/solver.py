@@ -21,6 +21,7 @@ class Analysis:
     probabilities: dict[Cell, float] = field(default_factory=dict)
     errors: list[str] = field(default_factory=list)
     notes: list[str] = field(default_factory=list)
+    layout_count: int | None = None  # complete global count, never a partial sample
 
     def next_move(self) -> Move | None:
         if self.errors:
@@ -302,6 +303,8 @@ def analyze(board: Board, total_mines: int | None = None,
         result.mines.clear()
         result.probabilities.clear()
         return result
+
+    result.layout_count = denominator
 
     for i, component in enumerate(components):
         other = _convolve(prefix[i], suffix[i + 1])
