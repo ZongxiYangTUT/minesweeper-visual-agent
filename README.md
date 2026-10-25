@@ -1,21 +1,147 @@
-# Minesweeper Visual Agent
+# Minesweeper Visual Agent (MVA)
 
-A screen-only classic Minesweeper agent for Windows. This core provides board calibration, template annotation, read-only inspection and explicitly confirmed single-step mouse control.
+一个**从屏幕识别棋盘、不读取隐藏地雷布局**的 Windows 经典扫雷工具。目前支持仓库自带的彩色 XP 扫雷，执行「启动游戏 → 自动定位棋盘 → 视觉识别 → CSP 推理 → 点击 → 截图核验 → 胜负判断」完整流程。
 
-## Setup
+**已经在本机 Windows、125% 缩放下完成真实初级、中级和高级棋局的自动通关。** 自动模式不需要手工框选或采集模板；其他皮肤仍可使用原有的标定、模板识别和人工确认单步模式。
+
+## 直接运行自动演示
+
+在项目根目录的 PowerShell 中运行：
+
+```powershell
+.\play.ps1
+```
+
+脚本会复用 `.venv`（不存在时自动创建并安装依赖），启动 `game/扫雷_5.1.2600.0.exe`，选择初级，最多尝试 10 局，首次胜利即停止并保留胜利画面。**演示允许在无确定解时按最低雷概率猜测，因此可能输掉某局；不保证每局获胜。**
+
+若 PowerShell 不允许运行脚本，已有环境时可直接使用等价命令：
+
+```powershell
+.\.venv\Scripts\python.exe -m minesweeper_agent play --allow-guess --games 10 --stop-on-win
+```
+
+运行时保持游戏在**主屏幕、前台且不被遮挡**。按住 `Esc`、在启动终端按 `Ctrl+C`，或把鼠标移至屏幕左上角可停止。切换到其他窗口、移动游戏窗口、出现未知格或非预期弹窗时程序也会停止。
+
+```powershell
+# 仅执行确定动作；开局后遇到必须猜测的局面就停止
+.\play.ps1 -NoGuess -Games 1
+
+# 中级：16×16 / 40 雷；高级：16×30 / 99 雷
+.\play.ps1 -Difficulty intermediate -Games 10
+.\play.ps1 -Difficulty expert -Games 10
+
+# 将点击后的等待缩短到 0.1 秒；仍然每步截图核验
+.\play.ps1 -Difficulty expert -Games 10 -Delay 0.1
+
+# 更细的控制；不加 --allow-guess 时不会猜雷
+.\.venv\Scripts\python.exe -m minesweeper_agent play --games 1 --delay 0.3 --max-steps 600
+```
+
+每次运行写入 `data/runs/<时间>/`：
+
+- `events.jsonl`：每步识别棋盘、动作、推理/猜测类别和雷概率。
+- `frame-*.png`：只包含游戏客户区的截图。
+- `summary.json`：难度、棋盘尺寸、雷数、结果、点击/插旗/猜测次数、耗时和胜负数；中途出错的棋局也会记录。
+- `report.html`：可直接用浏览器打开的逐步截图回放。
+
+`play` 每次会重新开局；当前已有棋局会被替换。仅自动确认自带中文版扫雷的本地破纪录/英雄榜弹窗，保留默认姓名；其他弹窗停止。窗口 API 仅用于定位、焦点和这些可见弹窗，数字和地雷状态均来自屏幕截图。
+
+自动识别目前针对彩色经典 XP 皮肤。三档难度在 125% 缩放下均已验证；其他 DPI 和皮肤尚未完成实机验收。高级扫雷仍可能遇到必须猜测的局面；少量通关记录不能代表稳定胜率。超过求解预算、没有完整概率且没有确定动作时停止，不做盲点。
+
+## 运行要求
+
+- Windows 10 / 11，Python 3.10 或更新版本。
+- 经典风格、规则矩形网格的扫雷游戏（建议从初级 9×9、10 雷开始）。
+- 游戏窗口保持**可见、不被终端遮挡、大小和位置不变**，第一版点击限制在主显示器。
+- 原始屏幕截图用 `mss`，模板标注和识别用 OpenCV，鼠标使用 PyAutoGUI。
+
+## 安装与原有人工单步模式
+
+在 Windows PowerShell 中进入项目根目录：
 
 ```powershell
 py -3 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -e ".[dev]"
-.\.venv\Scripts\python.exe -m pytest -q
+.\.venv\Scripts\Activate.ps1
+python -m pip install -e ".[dev]"
+python -m pytest -q
 ```
 
-Keep your game visible on the primary monitor. Use `minesweeper-agent calibrate --rows 9 --cols 9 --mines 10` to select its grid, then `annotate` to collect cell templates. Use `inspect` to verify recognition, `step --dry-run` to inspect a proposed move, and `step` to execute one move after typing `yes`.
+如果 PowerShell 禁止激活脚本，可以直接用 `.\.venv\Scripts\python.exe` 运行后续的 `python` 命令。
 
-The solver combines clue propagation, subset subtraction, bounded grouped enumeration and global mine-count weighting. Unknown cells, inconsistent clues and visible mines prevent actions. Incomplete enumeration counts are discarded. Local environment, screenshots and templates are ignored by Git.
+1. 启动扫雷，选择 **9×9 / 10 雷**，将游戏窗口放在主显示器且不要移动。
+2. 运行网格标定（**只框住最上排/最左列到最下排/最右列所有小格子，不要包括窗口边框、笑脸或计数器**）：
 
-## Automatic classic Windows play
+   ```powershell
+   minesweeper-agent calibrate --rows 9 --cols 9 --mines 10
+   ```
 
-Run `./play.ps1` in PowerShell to launch the bundled game and play up to 10 games, stopping on the first win. `-Difficulty intermediate` selects 16x16 / 40 mines and `-Difficulty expert` selects 16x30 / 99 mines. `-NoGuess` disables probability-based guesses; `-Delay 0.1` shortens the delay after each click.
+   用鼠标拖框，`Enter` 接受，`Esc` 取消。网格 ROI 和行列数存入 `data/board.json`。
 
-The game must remain visible on the primary screen. Hold Escape, use Ctrl+C, or move the pointer to the top-left corner to stop. The runner stops on unrecognized cells, unexpected state changes or lost focus. Guesses can lose games. Each run saves game screenshots, action records, a summary and an HTML replay under `data/runs/`.
+3. 创建第一批视觉模板：
+
+   ```powershell
+   minesweeper-agent annotate
+   ```
+
+   在弹出的**网格预览窗口**点击一个格子，再按键指定它在游戏截图中的类别：
+
+   | 按键 | 标签 | 按键 | 标签 |
+   | --- | --- | --- | --- |
+   | `c` | 未打开格 | `0`～`8` | 已打开的数字 / 空白零格 |
+   | `f` | 插旗格 | `m` | 已暴露地雷 |
+   | `r` | 重新截图 | `q` | 退出标注 |
+
+   开局至少先教一个 `c`（盖住的格子）。然后**手动点击游戏中的第一格**，再次打开标注窗口，对已出现的 `0`、`1`、`2`……进行逐类采样。后续出现未见过的数字，再追加样本即可。`0` 对应的是已打开但没有数字的平坦空格。
+
+   每个标签支持多个样本；当前模板保存在 `data/templates/`，它们依赖你自己的游戏皮肤和缩放比例，**不要跨皮肤/缩放混用**。
+
+4. 只读检查识别是否正确：
+
+   ```powershell
+   minesweeper-agent inspect
+   ```
+
+   输出中的 `#`=未打开，`.`=空白零格，`1`～`8`=数字，`F`=旗帜，`?`=识别不确定，`X`=已暴露地雷。
+
+   **只要存在 `?`，程序绝不点击。** 回到 `annotate` 添加模板；数字有误时也不要继续，即使界面暂未报 `?`。
+
+5. 先试「只做推理，不点击」：
+
+   ```powershell
+   minesweeper-agent step --dry-run
+   ```
+
+6. 检查建议动作没问题后，再执行真正的**单步确认**：
+
+   ```powershell
+   minesweeper-agent step
+   ```
+
+   只有在出现必然安全格（优先）或必然有雷格时，才会给出动作；必须输入完整 `yes` 才会执行**一次**左键或右键。点击之后程序会截图并检查结果，然后退出。下一步需要你重新调用 `step`。
+
+> 想临时停止时，直接按 `Ctrl+C`；PyAutoGUI 还保留左上角鼠标 Fail-Safe。建议先从 `--dry-run` 开始。
+
+## 本版算法能力与边界
+
+- 对每个数字建立 0/1 地雷数量约束。
+- 迭代传播确定性规则；将相互关联的未知格拆成独立前沿连通分量。
+- 先做数字约束传播和子集相减推理；相同约束中的等价格合并枚举，并用组合数保留每个布局的精确权重。
+- 人工单步模式每个分量上限为 18 格，自动模式为 96 格；一次分析的枚举预算为 50 万搜索节点、约 1.5 秒。超限时丢弃不完整计数，仍可执行已经严格证明的动作；不能据部分枚举猜雷。
+- 如果标定时提供 `--mines`，结合全局剩余地雷数量与未受约束格子的组合数，计算精确的剩余布局比例；未提供时仅展示各前沿分量下的局部等权概率。
+- **程序把游戏中的旗帜视为已确认地雷**。如果你误插旗或视觉识别错误，约束可能无解甚至导出错误结论。第一版最好让程序自己建议插旗，避免手动误标。
+- 只有所有符合模型的布局都一致时，才会将格子标成「必然安全」或「必然有雷」。无解、识别未知、已爆雷等情况均停止。
+- `step` 仍仅执行确定动作且逐次确认；`play` 可以连续执行，只有显式提供 `--allow-guess` 才会猜测。自动演示脚本默认包含该选项。
+- 多个格子的精确雷概率相同时，优先选择更可能展开空白区域的格子；这一启发式只用于同风险候选的排序，不当作安全证明。
+- 当前**不支持**：任意皮肤自动识别、保证每局获胜、多窗口并发和后台点击。真实截图回归测试已加入，但普通 `pytest` 不会启动或操作桌面游戏。
+
+## 常见问题
+
+- **所有格子是 `?`**：先在 `annotate` 中标一个正确的 `c`，之后再训练实际出现的数字。
+- **数字被误识别成另一个数字**：此时不要点击。检查网格 ROI 是否精准、模板是否来自同一缩放/皮肤，补充该类样本。可以适当减小全局 `--threshold`，例如 `minesweeper-agent --threshold 0.025 inspect`，让可疑格优先变为 `?`。
+- **按下确认后没有打开格子**：确保游戏可见、未被终端覆盖、在主显示器；检查 DPI、窗口位置是否已改变，必要时重新 `calibrate`。
+- **没有推荐动作**：可能还没有数字、逻辑确实需要猜，或超过了搜索上限。第一版不会自动冒险。
+- **模板/数据存放在哪里？** 默认 `./data/`，可通过 `minesweeper-agent --data-dir D:\\path\\to\\data inspect` 指定其他路径。
+
+## 工程文档
+
+模块职责、数据流、接口约束、风险控制和迭代路线请看 [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md)。
